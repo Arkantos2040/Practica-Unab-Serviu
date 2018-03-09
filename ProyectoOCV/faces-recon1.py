@@ -14,8 +14,8 @@ import datetime
 import face_recognition
 import time
 
-height=240
-width=320
+height=480
+width=640
 
 
 
@@ -73,7 +73,7 @@ def recog(dictionary, encoded, taked, image):
         
         if match[0]:
             name = dictionary[tuple(imagesEncoded)]
-            cv2.imwrite('./saved/image'+time.strftime("%c")+'.jpg', image)
+            cv2.imwrite('./saved/'+name+time.strftime("%c")+'.jpg', image)
             return name
     name = "Persona Desconocida"
     return name

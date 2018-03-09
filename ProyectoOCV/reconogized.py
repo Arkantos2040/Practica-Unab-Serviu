@@ -1,20 +1,22 @@
 from __future__ import print_function
-import imutils
 import cv2
 import numpy
 import os
 import RPi.GPIO as GPIO
 import time
-from cv2 import *
 import picamera
 from ftplib import FTP
-import time
+import datetime
+import face_recognition
 
+height=480
+width=640
 
 #Activacion del GPIO
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(11, GPIO.IN)         #Read output from PIR motion sensor
+
 
 #Seteo del FTP a utilizar
 def envio(imagen):
@@ -57,7 +59,7 @@ gris = cv2.GaussianBlur(image, (21, 21), 0)
 while True:
 	i=GPIO.input(11)
 	if i==0:                 #When output from motion sensor is LOW
-		print ("No intruders",i)
+		#print ("No intruders",i)
 		time.sleep(0.01)
 
 	elif i==1:              
