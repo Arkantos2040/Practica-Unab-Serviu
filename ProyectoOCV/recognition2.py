@@ -4,17 +4,19 @@
 Created on Fri Mar  9 11:33:46 2018
 
 @author: César Cheuque Cerda
-"""
 
+Se recomienda leer cada comentario para que el programa funcione OK
+"""
+#carga de librerías
 from __future__ import print_function
 import datetime
 import face_recognition
 import time
 import cv2
-import urllib3
 import os
 import glob
-import datetime
+#import urllib2 #para trabajar con python2 descomentar esta línea y comentar la siguiente
+import urllib.request as urllib2 #para trabajar con python3 descomentar esta línea y comentar la anterior
 
 # Creación del archivo de registro
 try:
@@ -38,53 +40,62 @@ lstDir = os.walk(path)   #os.walk()Lista directorios y ficheros
 #Crea una lista de los ficheros jpg que existen en el directorio y los incluye a la lista.
 images_faces_encoding = ()
 
+#Se crea una tupla codificadas para la detección de rostros de todos los archivos .jpg .png en el directorio registrados
+#además crea una tupla con los nombres de los archivos sin extensión de los mismos
 for root, dirs, files in lstDir:
     for fichero in files:
         #print (fichero)
         (nombreFichero, extension) = os.path.splitext(fichero)
         if(extension == ".jpg" or extension== ".png"):
-            image = face_recognition.load_image_file("registrados/"+fichero)
+            image = face_recognition.load_image_file("./registrados/"+fichero)
             image_face_encoding = face_recognition.face_encodings(image)[0]
-            images_faces_encoding = images_faces_encoding + (image_face_encoding,)
+            images_faces_encoding = images_faces_encoding + (image_face_encoding, )
             list_persons = list_persons  +  (nombreFichero, )
             lstFiles.append(nombreFichero+extension)
 
 
-
 dict_recon={}
 
+# Define ruta de dónde se guardarán las fotos que el sistema guarde tanto de las personas reconocidas como de desconocidos
 
-image_face_tupla = tuple(images_faces_encoding)
+pathO="/home/cesar/www/fotos/"
+#pathO="./borrar/"
+
+# Se crea un diccionario de las tuplas ya creadas donde las imágenes codificadas serán las llaves y los nombres serán el valor asociado a las llaves
 j=0
 for images_face in images_faces_encoding:
     dict_recon[tuple(images_face)]=list_persons[j]
     j=j+1
 
-# Initialize some variables
+#Inicia listas necesarias
 face_locations = []
 face_encodings = []
+
+#Función de reconocimiento facial
 def recog(dictionary, encoded, taked, image):
     for imagesEncoded in encoded:
-
         
-        # See if the face is a match for the known face(s)
-        match = face_recognition.api.compare_faces([imagesEncoded], taked, tolerance= 0.5)
-        
+        # Evalúa si el rostro de la imagen tomada "taken" corresponde a uno de las personas en la tupla creada
+        match = face_recognition.compare_faces([imagesEncoded], taked, tolerance= 0.54)
         if match[0]:
+ 
             name = dictionary[tuple(imagesEncoded)]
             try:
-                os.mkdir("/home/cesar/www/fotos/"+name)
+
+                os.mkdir(pathO+name)
             except Exception:
+
                 pass
-            path2 = '/home/cesar/www/fotos/'+name+"/"
+            # Guarda un registro de cada persona encontrada y la foto de esta en una carpeta separada a cada persona
+            path2 = pathO+name+"/"
             nameFile= path2+name+"_"+now+'.jpg'
-            print(nameFile)
             cv2.imwrite(nameFile, image)
             latestFile = datetime.datetime.fromtimestamp(os.path.getmtime(nameFile))
             f = open('registro.txt','a')
             f.write('\n' + "Registro de: "+name+"    Fecha: "+time.strftime("%c"))
             f.close()
             lstDir2 = os.walk(path2)
+            # Elimina una imagen de la persona cada vez que se llega a 5 por persona
             if (len(glob.glob(path2+'/*.jpg'))>4):
                 print(len(glob.glob(path2+'/*.jpg')))
                 for root, directory, files in lstDir2:
@@ -96,54 +107,59 @@ def recog(dictionary, encoded, taked, image):
                             OldestFile = curpath
                     os.remove(OldestFile)
 
-                            
-                            
-                        
-                        
-                    
-                
-
             return name
+    # Si la persona en cuestion no es reconocida, genera una alerta en la aplicación, guarda en la base de datos y guarda la imagen de esta.
     name = "Persona Desconocida"
-    cv2.imwrite('/home/cesar/www/fotos/Desconocidos/'+name+"_"+now+'.jpg', image)
+    cv2.imwrite(pathO+name+"_"+now+'.jpg', image)
     f = open('registro.txt','a')
     f.write('\n' + "Registro de: "+name+"    Fecha: "+time.strftime("%c"))
     f.close()
+
     site= "http://ignacio.awaresystems.cl/insertarAlertaAdulto.php?intentoAlerta=1&estadoAlerta=1&tipoAlerta=Persona_Desconocida&Usuario_id_usuario=12"
+    alerta ="http://ignacio.awaresystems.cl/notificacion.php?mensaje=Persona_desconocida"
     hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                        'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
                        'Accept-Encoding': 'none',
                        'Accept-Language': 'en-US,en;q=0.8',
                        'Connection': 'keep-alive'}
-    req = urllib3.Request(site, headers=hdr)
+    resp= urllib2.Request(alerta, headers=hdr)
+
+    req = urllib2.Request(site, headers=hdr)
+
     try:
-        page = urllib3.urlopen(req)
-    except urllib3.HTTPError as e:
+        page2=urllib2.urlopen(resp)
+
+        page = urllib2.urlopen(req)
+    except urllib2.HTTPError as e:
+
         print (e.code)
 
     content = page.read()
+    content2=page2.read()
+    print (content2)
     print (content)
     return name
-        
+            
     
     
-    
+# Ejecución del Programa    
 while True:
     try:
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Recupera la imagen guardada en la carpeta temporal
         image = face_recognition.load_image_file('./temp/image.jpg')
     
-        # Find all the faces and face encodings in the current frame of video
+        # Identifica como tal todos los rostros que están presentes la imagen recuperada
         face_locations = face_recognition.face_locations(image)
     
         print("Se encuentran {} rostros en la imagen.".format(len(face_locations)), now)
         face_encodings = face_recognition.face_encodings(image, face_locations)
         
-        # Loop over each face found in the frame to see if it's someone we know.
-    
+        # Crea un loop de reconocimiento por cada rostro identificado como tal de la imagen recuperada 
             
         for face_encoding in face_encodings:
+            
             print("Registrado : {}!".format(recog(dict_recon, images_faces_encoding,face_encoding, image)), now)
     except Exception:
-        print ("No se detecta nada")
+        print("nada que detectar")

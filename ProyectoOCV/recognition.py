@@ -48,7 +48,6 @@ dict_recon={}
 image_face_encoding = (image1_face_encoding, image2_face_encoding, image3_face_encoding, 
                        image4_face_encoding, image5_face_encoding, image6_face_encoding,
                        image7_face_encoding, image8_face_encoding, image9_face_encoding)
-
 image_face_tupla = tuple(image_face_encoding)
 j=0
 for images_face in image_face_encoding:
@@ -63,7 +62,9 @@ def recog(dictionary, encoded, taked, image):
 
         
         # See if the face is a match for the known face(s)
-        match = face_recognition.compare_faces([imagesEncoded], taked)
+        #print(imagesEncoded)
+        #print("salto")
+        match = face_recognition.compare_faces([imagesEncoded], taked, tolerance= 0.54)
         
         if match[0]:
             name = dictionary[tuple(imagesEncoded)]
@@ -75,19 +76,28 @@ def recog(dictionary, encoded, taked, image):
     f.write('\n' + "Registro de: "+name+"    Fecha: "+time.strftime("%c"))
     f.close()
     site= "http://ignacio.awaresystems.cl/insertarAlertaAdulto.php?intentoAlerta=1&estadoAlerta=1&tipoAlerta=Persona_Desconocida&Usuario_id_usuario=12"
+    alerta ="http://ignacio.awaresystems.cl/notificacion.php?mensaje=Persona_desconocida"
     hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                        'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
                        'Accept-Encoding': 'none',
                        'Accept-Language': 'en-US,en;q=0.8',
                        'Connection': 'keep-alive'}
+    resp= urllib2.Request(alerta, headers=hdr)
+
     req = urllib2.Request(site, headers=hdr)
+
     try:
+        page2=urllib2.urlopen(resp)
+
         page = urllib2.urlopen(req)
     except urllib2.HTTPError as e:
+
         print (e.code)
 
     content = page.read()
+    content2=page2.read()
+    print (content2)
     print (content)
     return name
         
@@ -95,6 +105,7 @@ def recog(dictionary, encoded, taked, image):
     
     
 while True:
+    
     try:
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         image = face_recognition.load_image_file('./temp/image.jpg')
