@@ -9,12 +9,11 @@ import time
 import os
 import picamera
 import paramiko
-import sys
 import numpy as np
 import cv2
 
-
-host = "awaresystems.cl"                    #hard-coded
+# Conecta con el servidor sftp al servidor awaresystems.cl
+host = "awaresystems.cl"                    
 port = 22222
 transport = paramiko.Transport((host, port))
 
@@ -26,12 +25,14 @@ height=480*3
 width=640*3
 
 
-
+# Activa y configura la cámara de la Raspberry
 camera = picamera.PiCamera()
 camera.resolution = (width, height)
+
+# Sube la foto tomada por la cámara al servidor
 def envio():
-    path =  '/home/cesar/recogn/temp/'  #hard-coded
-    localpath = './temporal/image.jpg' 
+    path =  '/home/cesar/ProyectoOCV/temp/' 
+    localpath = './temp/image.jpg' 
     sftp.put(localpath, path)
 
     sftp.close()
@@ -39,18 +40,19 @@ def envio():
     return 'Imagen subida'
 
 
-
+# Elimina la imagen en caso de que estuviera
 try:
-	os.remove("temporal/image.jpg")
+	os.remove("temp/image.jpg")
 	print ("iniciando 1")
 except Exception:
 	print ("iniciando2")
 
+# Toma fotografías cada 1 segundo
 while (True):
     output = np.empty((height,  width, 3,), dtype=np.uint8)
     # Grab a single frame of video from the RPi camera as a numpy array
     camera.capture(output, format="rgb")
-    cv2.imwrite('./temporal/image.jpg', output)
+    cv2.imwrite('./temp/image.jpg', output)
     print(envio())
     #os.remove("temporal/image.jpg")
     time.sleep(1)
