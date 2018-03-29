@@ -125,7 +125,7 @@ def recog(dictionary, encoded, taked, image):
             return name
     # Si la persona en cuestion no es reconocida, genera una alerta en la aplicación, guarda en la base de datos y guarda la imagen de esta.
     name = "Persona Desconocida"
-    cv2.imwrite(pathO+name+"_"+now+'.jpg', image)
+    cv2.imwrite(pathO+"desconocidos"+name+"_"+now+'.jpg', image)
     f = open('registro.txt','a')
     f.write('\n' + "Registro de: "+name+"    Fecha: "+time.strftime("%c"))
     f.close()
