@@ -14,6 +14,7 @@ import face_recognition
 import time
 import cv2
 import os
+#import os.path as ruta
 import glob
 #import urllib2 #para trabajar con python2 descomentar esta línea y comentar la siguiente
 import urllib.request as urllib2 #para trabajar con python3 descomentar esta línea y comentar la anterior
@@ -88,16 +89,29 @@ def recog(dictionary, encoded, taked, image):
                 pass
             # Guarda un registro de cada persona encontrada y la foto de esta en una carpeta separada a cada persona
             path2 = pathO+name+"/"
-            nameFile= path2+name+"_"+now+'.jpg'
-            cv2.imwrite(nameFile, image)
-            latestFile = datetime.datetime.fromtimestamp(os.path.getmtime(nameFile))
-            f = open('registro.txt','a')
-            f.write('\n' + "Registro de: "+name+"    Fecha: "+time.strftime("%c"))
-            f.close()
+            nameFile= path2+name+"_foto1.jpg"
+            try:
+                latestFile = datetime.datetime.fromtimestamp(os.path.getmtime(nameFile))
+            except Exception:
+                pass
             lstDir2 = os.walk(path2)
+            
             # Elimina una imagen de la persona cada vez que se llega a 5 por persona
-            if (len(glob.glob(path2+'/*.jpg'))>4):
+            if(len(glob.glob(path2+'/*.jpg'))==0):
                 print(len(glob.glob(path2+'/*.jpg')))
+                nameFile= path2+name+"_foto1.jpg"
+                cv2.imwrite(nameFile, image)
+            elif(len(glob.glob(path2+'/*.jpg'))==1):
+                nameFile= path2+name+"_foto2.jpg"
+                cv2.imwrite(nameFile, image)
+            elif(len(glob.glob(path2+'/*.jpg'))==2):
+                nameFile= path2+name+"_foto3.jpg"
+                cv2.imwrite(nameFile, image)
+            elif(len(glob.glob(path2+'/*.jpg'))==3):
+                nameFile= path2+name+"_foto4.jpg"
+                cv2.imwrite(nameFile, image)
+            else:
+                #print(len(glob.glob(path2+'/*.jpg')))
                 for root, directory, files in lstDir2:
                     for archivo in files:
                         curpath = os.path.join(path2, archivo)
@@ -106,7 +120,8 @@ def recog(dictionary, encoded, taked, image):
                             latestFile = file_modified
                             OldestFile = curpath
                     os.remove(OldestFile)
-
+                    nameFile= OldestFile
+                    cv2.imwrite(nameFile, image)
             return name
     # Si la persona en cuestion no es reconocida, genera una alerta en la aplicación, guarda en la base de datos y guarda la imagen de esta.
     name = "Persona Desconocida"
@@ -114,7 +129,7 @@ def recog(dictionary, encoded, taked, image):
     f = open('registro.txt','a')
     f.write('\n' + "Registro de: "+name+"    Fecha: "+time.strftime("%c"))
     f.close()
-
+    
     site= "http://ignacio.awaresystems.cl/insertarAlertaAdulto.php?intentoAlerta=1&estadoAlerta=1&tipoAlerta=Persona_Desconocida&Usuario_id_usuario=12"
     alerta ="http://ignacio.awaresystems.cl/notificacion.php?mensaje=Persona_desconocida"
     hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
@@ -139,6 +154,7 @@ def recog(dictionary, encoded, taked, image):
     content2=page2.read()
     print (content2)
     print (content)
+    
     return name
             
     
@@ -148,18 +164,22 @@ while True:
     try:
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # Recupera la imagen guardada en la carpeta temporal
-        image = face_recognition.load_image_file('./temp/image.jpg')
-    
+        image = face_recognition.load_image_file('./temp/image1.jpg')
+        image2 = face_recognition.load_image_file('./temp/image2.jpg')
         # Identifica como tal todos los rostros que están presentes la imagen recuperada
         face_locations = face_recognition.face_locations(image)
-    
-        print("Se encuentran {} rostros en la imagen.".format(len(face_locations)), now)
+        face_locations2 = face_recognition.face_locations(image2)
+        print("Se encuentran {} rostros en la imagen. Camara 1.".format(len(face_locations)), now)
         face_encodings = face_recognition.face_encodings(image, face_locations)
-        
+        print("Se encuentran {} rostros en la imagen. Camara 2.".format(len(face_locations2)), now)
+        face_encodings2 = face_recognition.face_encodings(image2, face_locations2)
         # Crea un loop de reconocimiento por cada rostro identificado como tal de la imagen recuperada 
             
         for face_encoding in face_encodings:
             
             print("Registrado : {}!".format(recog(dict_recon, images_faces_encoding,face_encoding, image)), now)
+        for face_encoding in face_encodings2:
+            
+            print("Registrado : {}!".format(recog(dict_recon, images_faces_encoding,face_encoding, image2)), now)
     except Exception:
         print("nada que detectar")
